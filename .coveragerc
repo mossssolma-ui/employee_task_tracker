@@ -1,0 +1,15 @@
+[run]
+source = .
+omit =
+    */migrations/*
+    */__init__.py
+    manage.py
+    config/asgi.py
+    config/wsgi.py
+    users/management/commands/*
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __str__
+    raise NotImplementedError
