@@ -6,11 +6,8 @@ from users.models import CustomUser
 class CustomUserSerializer(serializers.ModelSerializer):
     """Сериализатор для модели пользователя"""
 
-    full_name = serializers.SerializerMethodField()
-
     class Meta:
         model = CustomUser
-
         fields = (
             "id",
             "email",
@@ -27,7 +24,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
             "is_active",
         )
         extra_kwargs = {
-            "password": {"write_only": True},
+            "password": {"write_only": True, "required": False},
             "is_superuser": {"read_only": True},
             "is_staff": {"read_only": True},
             "is_active": {"read_only": True},
@@ -37,8 +34,17 @@ class CustomUserSerializer(serializers.ModelSerializer):
         """Создание пользователя"""
         return CustomUser.objects.create_user(**validated_data)
 
-    def get_full_name(self, obj):
-        """Возврат полного имени и фамилии пользователя"""
-        if obj.last_name and obj.first_name:
-            return f"{obj.last_name} {obj.first_name[0]}"
-        return obj.last_name
+    def update(self, obj, validated_data):
+        """
+        Обновление пользователя с хешированием пароля
+        """
+        password = validated_data.pop("password", None)
+
+        for key, value in validated_data.items():
+            setattr(obj, key, value)
+
+        if password:
+            obj.set_password(password)
+
+        obj.save()
+        return obj

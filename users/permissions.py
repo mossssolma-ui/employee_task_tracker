@@ -1,12 +1,13 @@
-from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
+from rest_framework import permissions
 
 
-class IsOwner(IsAuthenticated):
-    """Проверка, что юзер является владельцем задачи"""
+class IsModerator(permissions.BasePermission):
+    """Проверка, что юзер является модератором"""
 
-    message = "Вы не являетесь владельцем этой задачи"
+    def has_permission(self, request, view):
+        if request.user.is_anonymous:
+            return False
+        return request.user.groups.filter(name="moderator").exists()
 
     def has_object_permission(self, request, view, obj):
-        if request.method in SAFE_METHODS:
-            return True
-        return obj.user == request.user
+        return self.has_permission(request, view)

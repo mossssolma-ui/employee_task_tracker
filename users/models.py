@@ -1,7 +1,8 @@
+import datetime
+
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
-from django.utils import timezone
 
 
 class CustomUserManager(BaseUserManager):
@@ -36,6 +37,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     """Модель пользователя для трекера задач сотрудников"""
 
     class EmployeeStatus(models.TextChoices):
+        """Статус сотрудника"""
+
         ACTIVE = "active", "Работает"
         VACATION = "vacation", "В отпуске"
         MISSION = "mission", "В командировке"
@@ -44,18 +47,21 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     username = None
     email = models.EmailField(unique=True, verbose_name="Email", help_text="Укажите почту")
-    first_name = models.CharField(max_length=50, null=True, blank=True, verbose_name="Имя", help_text="Укажите имя")
-    last_name = models.CharField(
-        max_length=50, null=True, blank=True, verbose_name="Фамилия", help_text="Укажите фамилию"
+    phone_number = models.CharField(
+        max_length=20, blank=True, null=True, verbose_name="Телефон", help_text="Укажите телефон"
+    )
+    city = models.CharField(max_length=100, blank=True, null=True, verbose_name="Город", help_text="Укажите город")
+    avatar = models.ImageField(
+        upload_to="users/avatars/", blank=True, null=True, verbose_name="Аватар", help_text="Загрузите аватар"
+    )
+    full_name = models.CharField(
+        max_length=250, null=True, blank=True, verbose_name="ФИО", help_text="Укажите ФИО сотрудника"
     )
     position = models.CharField(
         max_length=255, null=True, blank=True, verbose_name="Должность", help_text="Укажите должность сотрудника"
     )
-    phone_number = models.CharField(
-        max_length=20, blank=True, null=True, verbose_name="Телефон", help_text="Укажите телефон"
-    )
     date_of_employment = models.DateField(
-        default=timezone.now, verbose_name="Дата приема на работу", help_text="Укажите дату приема на работу"
+        default=datetime.date.today, verbose_name="Дата приема на работу", help_text="Укажите дату приема на работу"
     )
     status = models.CharField(
         max_length=20,
@@ -64,10 +70,6 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         verbose_name="Статус сотрудника",
         help_text="Укажите текущий статус сотрудника",
     )
-    city = models.CharField(max_length=100, blank=True, null=True, verbose_name="Город", help_text="Укажите город")
-    avatar = models.ImageField(
-        upload_to="users/avatars/", blank=True, null=True, verbose_name="Аватар", help_text="Загрузите аватар"
-    )
 
     is_active = models.BooleanField(
         default=True, verbose_name="Активен в системе", help_text="Может ли пользователь входить в систему"
@@ -75,15 +77,14 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False, verbose_name="Доступ к админке")
     date_joined = models.DateTimeField(auto_now_add=True, verbose_name="Дата регистрации")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Дата обновления")
+
     objects = CustomUserManager()
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
     def __str__(self):
-        if self.last_name and self.first_name:
-            return f"{self.last_name} {self.first_name} ({self.get_status_display()})"
-        return f"{self.email} ({self.get_status_display()})"
+        return f"{self.full_name} {self.position} {self.status} {self.date_of_employment}"
 
     class Meta:
         verbose_name = "Пользователь"
