@@ -20,10 +20,5 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(f"Пользователь с email: {email} уже существует"))
             return
 
-        user = CustomUser.objects.create(email=email)
-        user.is_staff = True
-        user.is_active = True
-        user.is_superuser = True
-        user.set_password(password)
-        user.save()
+        CustomUser.objects.create_superuser(email=email, password=password)
         self.stdout.write(self.style.SUCCESS(f"Администратор с email: {email} успешно создан"))

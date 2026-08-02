@@ -1,1 +1,160 @@
-# Employee Task Tracker Backend
+# Трекер задач сотрудников (Employee Task Tracker)
+[![Python](https://img.shields.io/badge/Python-3.13-blue.svg)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-6.0-green.svg)](https://www.djangoproject.com/)
+[![DRF](https://img.shields.io/badge/DRF-3.17-red.svg)](https://www.django-rest-framework.org/)
+[![Coverage](https://img.shields.io/badge/Coverage-85%25-brightgreen.svg)]()
+
+Серверное REST API приложение для управления задачами сотрудников, разработанное в рамках дипломной работы. Приложение обеспечивает прозрачность процессов выполнения задач, помогает равномерно распределять нагрузку и своевременно выполнять ключевые задания.
+
+## Особенности проекта
+
+- **Полноценный CRUD** для управления сотрудниками и задачами.
+- **Гибкая система ролей**: Обычные сотрудники, Модераторы и Суперпользователи с четким разграничением прав доступа.
+- **Сложная бизнес-логика**: Поддержка родительских и дочерних задач, приоритетов, статусов и дедлайнов.
+- **Многоуровневая валидация**: Проверка данных на уровне модели и сериализатора (защита от циклических зависимостей, некорректных статусов и назначения создателя задачи её же исполнителем).
+- **Специальные аналитические эндпоинты**:
+  - **Занятые сотрудники**: Список сотрудников, отсортированный по количеству активных задач, с детализацией самих задач.
+  - **Важные задачи**: Поиск задач в статусе "Создана", от которых зависят задачи в работе, с автоматическим подбором наименее загруженных кандидатов на исполнение.
+- **Автодокументация**: Интерактивная документация API через Swagger UI и ReDoc.
+- **Удобные команды управления**: Кастомные management-команды для быстрого развертывания и наполнения базы тестовыми данными.
+
+## 🛠 Технологический стек
+
+- **Язык**: Python 3.13
+- **Фреймворк**: Django, Django REST Framework (DRF)
+- **База данных**: PostgreSQL
+- **Управление зависимостями**: Poetry
+- **Аутентификация**: JWT (SimpleJWT)
+- **Документация**: `drf-yasg` (Swagger / ReDoc)
+- **Фильтрация и сортировка**: `django-filter`
+
+---
+
+## Установка и локальный запуск
+
+### 1. Предварительные требования
+Убедитесь, что на вашем компьютере установлены:
+- [Python 3.13](https://www.python.org/)
+- [PostgreSQL](https://www.postgresql.org/)
+- [Poetry](https://python-poetry.org/docs/#installation)
+
+### 2. Клонирование репозитория
+
+```bash
+git clone git@github.com:mossssolma-ui/employee_task_tracker.git
+```
+
+### 3. Установка зависимостей
+
+```bash
+poetry install
+```
+
+### 4. Настройка переменных окружения
+
+```bash
+# Django
+SECRET_KEY=your-super-secret-key-here
+DEBUG=True
+ALLOWED_HOSTS=ip_site,localhost,127.0.0.1
+
+# PostgreSQL
+POSTGRES_ENGINE=django.db.backends.postgresql
+POSTGRES_NAME=employee_tracker_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_postgres_password
+POSTGRES_HOST=127.0.0.1
+POSTGRES_PORT=5432
+
+# Команда создания суперпользователя (csu)
+CSU_EMAIL=
+CSU_PASSWORD=
+```
+
+### 5. Выполните миграции
+
+```bash
+python manage.py migrate
+```
+
+
+### 6. Создайте суперпользователя кастомной командой (логин и пароль указаны в .env)
+
+```bash
+python manage.py csu
+```
+### 7. Наполнение БД тестовыми данными используя кастомные команды
+
+```bash
+python manage.py create_test_users
+```
+
+```bash
+python manage.py create_test_tasks
+```
+
+### 8. Запуск сервета
+
+```bash
+python manage.py runserver
+```
+
+## Документация
+* Swagger UI: http://127.0.0.1:8000/swagger/
+* ReDoc: http://127.0.0.1:8000/redoc/
+
+## Структура проекта
+
+```
+employee_task_tracker/
+├── config/                             # Настройки проекта
+│   ├── __init__.py
+│   ├── asgi.py           
+│   ├── wsgi.py                     
+│   ├── settings.py         
+│   └── urls.py             
+├── htmlcov/                            # Покрытие тестами
+│   ├── index.html          
+├── media/                              # Для хранения media
+├── static/                             # Для хранения статики
+│               
+├── tasks/                              # Приложение задач
+│   ├── admin.py            
+│   ├── apps.py            
+│   ├── models.py           
+│   ├── views.py            
+│   ├── serializers.py      
+│   ├── permissions.py      
+│   ├── urls.py             
+│   ├── validators.py           
+│   ├── paginators.py       
+│   ├── services.py                    
+│   └── tests.py            
+│              
+├── users/                              # Приложение пользователей
+│   ├── management/
+│   │   └── commands
+│   │       ├── create_test_users.py    # Создание пользователей
+│   │       ├── create_test_tasks.py    # Создание задач
+│   │       └── csu.py                  # Создание суперюзера
+│   │  
+│   ├── admin.py            
+│   ├── apps.py            
+│   ├── models.py 
+│   ├── permissions.py            
+│   ├── serializers.py                       
+│   ├── views.py                 
+│   ├── urls.py             
+│   └── tests.py            
+│ 
+├── .coveragerc                         # конфиг coverage
+├── .flake8                             # конфиг Flake8
+├── .gitignore                          # конфиг Git
+├── .env.template                       # Шаблон переменных окружения
+├── pyproject.toml                      # Зависимости
+└── README.md
+```
+
+## Лицензия
+
+MIT License
