@@ -2,7 +2,7 @@
 [![Python](https://img.shields.io/badge/Python-3.13-blue.svg)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/Django-6.0-green.svg)](https://www.djangoproject.com/)
 [![DRF](https://img.shields.io/badge/DRF-3.17-red.svg)](https://www.django-rest-framework.org/)
-[![Coverage](https://img.shields.io/badge/Coverage-85%25-brightgreen.svg)]()
+[![Coverage](https://img.shields.io/badge/Coverage->75%25-brightgreen.svg)]()
 
 Серверное REST API приложение для управления задачами сотрудников, разработанное в рамках дипломной работы. Приложение обеспечивает прозрачность процессов выполнения задач, помогает равномерно распределять нагрузку и своевременно выполнять ключевые задания.
 
@@ -12,21 +12,23 @@
 - **Гибкая система ролей**: Обычные сотрудники, Модераторы и Суперпользователи с четким разграничением прав доступа.
 - **Сложная бизнес-логика**: Поддержка родительских и дочерних задач, приоритетов, статусов и дедлайнов.
 - **Многоуровневая валидация**: Проверка данных на уровне модели и сериализатора (защита от циклических зависимостей, некорректных статусов и назначения создателя задачи её же исполнителем).
-- **Специальные аналитические эндпоинты**:
+- **Специальные эндпоинты**:
   - **Занятые сотрудники**: Список сотрудников, отсортированный по количеству активных задач, с детализацией самих задач.
   - **Важные задачи**: Поиск задач в статусе "Создана", от которых зависят задачи в работе, с автоматическим подбором наименее загруженных кандидатов на исполнение.
 - **Автодокументация**: Интерактивная документация API через Swagger UI и ReDoc.
 - **Удобные команды управления**: Кастомные management-команды для быстрого развертывания и наполнения базы тестовыми данными.
+- **Контейнеризация**: Полная поддержка Docker и Docker Compose для мгновенного развертывания с Nginx и PostgreSQL.
 
-## 🛠 Технологический стек
+## Технологический стек
 
 - **Язык**: Python 3.13
 - **Фреймворк**: Django, Django REST Framework (DRF)
-- **База данных**: PostgreSQL
+- **База данных**: PostgreSQL 17
+- **Веб-сервер**: Gunicorn + Nginx
 - **Управление зависимостями**: Poetry
 - **Аутентификация**: JWT (SimpleJWT)
 - **Документация**: `drf-yasg` (Swagger / ReDoc)
-- **Фильтрация и сортировка**: `django-filter`
+- **Тестирование**: `pytest`, `pytest-django`, `coverage`
 
 ---
 
@@ -59,54 +61,41 @@ DEBUG=True
 ALLOWED_HOSTS=ip_site,localhost,127.0.0.1
 
 # PostgreSQL
-POSTGRES_ENGINE=django.db.backends.postgresql
-POSTGRES_NAME=employee_tracker_db
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your_postgres_password
-POSTGRES_HOST=127.0.0.1
-POSTGRES_PORT=5432
+POSTGRES_ENGINE=
+POSTGRES_NAME=
+POSTGRES_USER=
+POSTGRES_PASSWORD=
+POSTGRES_HOST=
+POSTGRES_PORT=
 
 # Команда создания суперпользователя (csu)
 CSU_EMAIL=
 CSU_PASSWORD=
+
+# Логин DOCKERHUB
+DOCKERHUB_USERNAME=
 ```
 
-### 5. Выполните миграции
+## Использование:
+Для запуска приложения используется docker-compose. Приложения собраны в контейнеры, конфигурация находится в файле: `docker-compose.yml`
 
-```bash
-python manage.py migrate
-```
+Запустить можно через команду:
 
-
-### 6. Создайте суперпользователя кастомной командой (логин и пароль указаны в .env)
-
-```bash
-python manage.py csu
-```
-### 7. Наполнение БД тестовыми данными используя кастомные команды
-
-```bash
-python manage.py create_test_users
-```
-
-```bash
-python manage.py create_test_tasks
-```
-
-### 8. Запуск сервета
-
-```bash
-python manage.py runserver
-```
-
-## Документация
-* Swagger UI: http://127.0.0.1:8000/swagger/
-* ReDoc: http://127.0.0.1:8000/redoc/
+`docker-compose up -d --build`
+После запуска приложения локальным способом, вы сможете получить доступ к нему по адресу http://localhost/.
+В процессе запуска компоуза автоматически выполнятся кастомные команды по наполнению БД:
+`python manage.py csu`,
+`python manage.py create_test_users`,
+`python manage.py create_test_tasks`
+#### У всех тестовых пользователей (кроме суперюзера) дефолтный пароль `test123`
 
 ## Структура проекта
 
 ```
 employee_task_tracker/
+├── .gihub/
+│   └── workflows/
+│       └── ci.yaml
 ├── config/                             # Настройки проекта
 │   ├── __init__.py
 │   ├── asgi.py           
@@ -114,7 +103,7 @@ employee_task_tracker/
 │   ├── settings.py         
 │   └── urls.py             
 ├── htmlcov/                            # Покрытие тестами
-│   ├── index.html          
+│   └── index.html          
 ├── media/                              # Для хранения media
 ├── static/                             # Для хранения статики
 │               
@@ -147,14 +136,22 @@ employee_task_tracker/
 │   ├── urls.py             
 │   └── tests.py            
 │ 
-├── .coveragerc                         # конфиг coverage
+├── Dockerfile
+├── docker-compose.yaml
+├── docker-compose.deploy.yaml
+├── .dockerignore
+├── nginx.conf
 ├── .flake8                             # конфиг Flake8
 ├── .gitignore                          # конфиг Git
 ├── .env.template                       # Шаблон переменных окружения
+├── poetry.lock
 ├── pyproject.toml                      # Зависимости
 └── README.md
 ```
 
-## Лицензия
+## Документация
+* Swagger: http://localhost/swagger/
+* ReDoc: http://localhost/redoc/
 
+## Лицензия
 MIT License
