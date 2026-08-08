@@ -185,7 +185,7 @@ class BusyEmployeesAPIView(APIView):
     permission_classes = [IsModerator]
 
     @swagger_auto_schema(
-        operation_description="Получить список занятых сотрудников и их текущих активных задач (доступно модераторам)",
+        operation_description="Получить список занятых сотрудников и их активных задач (доступно модераторам)",
         responses={
             200: openapi.Response(
                 description="Список сотрудников с задачами",
