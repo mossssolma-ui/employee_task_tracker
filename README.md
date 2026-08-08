@@ -2,7 +2,7 @@
 [![Python](https://img.shields.io/badge/Python-3.13-blue.svg)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/Django-6.0-green.svg)](https://www.djangoproject.com/)
 [![DRF](https://img.shields.io/badge/DRF-3.17-red.svg)](https://www.django-rest-framework.org/)
-[![Coverage](https://img.shields.io/badge/Coverage-86%25-brightgreen.svg)]()
+[![Coverage](https://img.shields.io/badge/Coverage->75%25-brightgreen.svg)]()
 
 Серверное REST API приложение для управления задачами сотрудников, разработанное в рамках дипломной работы. Приложение обеспечивает прозрачность процессов выполнения задач, помогает равномерно распределять нагрузку и своевременно выполнять ключевые задания.
 
@@ -71,6 +71,9 @@ POSTGRES_PORT=
 # Команда создания суперпользователя (csu)
 CSU_EMAIL=
 CSU_PASSWORD=
+
+# Логин DOCKERHUB
+DOCKERHUB_USERNAME=
 ```
 
 ## Использование:
@@ -78,20 +81,21 @@ CSU_PASSWORD=
 
 Запустить можно через команду:
 
-`docker-compose up`
-Или протестировать работоспособность можно локально через терминал, запустив:
-
-`python manage.py runserver`
-После запуска приложения локальным способом, вы сможете получить доступ к нему по адресу http://127.0.0.1:8000/.
-
-## Документация
-* Swagger: http://127.0.0.1:8000/swagger/
-* ReDoc: http://127.0.0.1:8000/redoc/
+`docker-compose up -d --build`
+После запуска приложения локальным способом, вы сможете получить доступ к нему по адресу http://localhost/.
+В процессе запуска компоуза автоматически выполнятся кастомные команды по наполнению БД:
+`python manage.py csu`,
+`python manage.py create_test_users`,
+`python manage.py create_test_tasks`
+#### У всех тестовых пользователей (кроме суперюзера) дефолтный пароль `test123`
 
 ## Структура проекта
 
 ```
 employee_task_tracker/
+├── .gihub/
+│   └── workflows/
+│       └── ci.yaml
 ├── config/                             # Настройки проекта
 │   ├── __init__.py
 │   ├── asgi.py           
@@ -99,7 +103,7 @@ employee_task_tracker/
 │   ├── settings.py         
 │   └── urls.py             
 ├── htmlcov/                            # Покрытие тестами
-│   ├── index.html          
+│   └── index.html          
 ├── media/                              # Для хранения media
 ├── static/                             # Для хранения статики
 │               
@@ -132,13 +136,22 @@ employee_task_tracker/
 │   ├── urls.py             
 │   └── tests.py            
 │ 
+├── Dockerfile
+├── docker-compose.yaml
+├── docker-compose.deploy.yaml
+├── .dockerignore
+├── nginx.conf
 ├── .flake8                             # конфиг Flake8
 ├── .gitignore                          # конфиг Git
 ├── .env.template                       # Шаблон переменных окружения
+├── poetry.lock
 ├── pyproject.toml                      # Зависимости
 └── README.md
 ```
 
-## Лицензия
+## Документация
+* Swagger: http://localhost/swagger/
+* ReDoc: http://localhost/redoc/
 
+## Лицензия
 MIT License
