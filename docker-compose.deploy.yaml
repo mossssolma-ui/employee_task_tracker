@@ -1,10 +1,9 @@
 x-backend: &backend
-  image: django-example:latest
-  build: .
+  image: ${DOCKERHUB_USERNAME}/django-example:${APP_TAG:-latest}
   env_file: .env
   environment:
-    DB_HOST: db
-    DB_PORT: 5432
+    POSTGRES_HOST: db
+    POSTGRES_PORT: 5432
   depends_on:
     db:
       condition: service_healthy
@@ -16,8 +15,6 @@ services:
       POSTGRES_DB: ${POSTGRES_NAME}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "${POSTGRES_PORT}:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -28,33 +25,20 @@ services:
 
   migrations:
     <<: *backend
-    command: python manage.py migrate
-    volumes:
-      - .:/app
+    command: python manage.py migrate --noinput
 
   static_collector:
     <<: *backend
     command: python manage.py collectstatic -c --no-input
     volumes:
       - static:/app/staticfiles
-      - media:/app/media
 
   backend:
     <<: *backend
-    command: >
-      sh -c "python manage.py csu &&
-      python manage.py create_test_users &&
-      python manage.py create_test_tasks &&
-      gunicorn config.wsgi:application --workers 4 --access-logfile - --error-logfile - -b 0.0.0.0:8000"
-    ports:
-      - "8000:8000"
+    command: gunicorn config.wsgi:application --workers 4 --access-logfile - --error-logfile - -b 0.0.0.0:8000
     depends_on:
       migrations:
         condition: service_completed_successfully
-    volumes:
-      - .:/app
-      - static:/app/staticfiles
-      - media:/app/media
     healthcheck:
       test: python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')"
       interval: 10s
@@ -67,7 +51,7 @@ services:
     image: nginx:1.28-alpine
     restart: on-failure
     ports:
-      - "80:80"
+      - "${APP_PORT:-80}:80"
     volumes:
       - static:/var/www/staticfiles/:ro
       - media:/var/www/media/:ro

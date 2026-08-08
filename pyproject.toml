@@ -56,6 +56,8 @@ skip_glob = [".venv/*", "venv/*", "env/*", "__pycache__/*"]
 [tool.coverage.report]
 omit = [
     "*/tests/*",
+    "*/migrations/*",
+    "*/config/*",
     "*/asgi.py",
     "*/wsgi.py",
     "manage.py",
@@ -63,9 +65,3 @@ omit = [
 ]
 show_missing = true
 skip_covered = true
-
-# добавил зеркало pypi - т.к. не было связи с pypi.org
-[[tool.poetry.source]]
-name = "pypi-mirror"
-url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple/"
-priority = "primary"
