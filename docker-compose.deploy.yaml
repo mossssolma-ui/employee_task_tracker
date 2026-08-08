@@ -1,0 +1,72 @@
+x-backend: &backend
+  image: ${DOCKERHUB_USERNAME}/django-example:${APP_TAG:-latest}
+  env_file: .env
+  environment:
+    POSTGRES_HOST: db
+    POSTGRES_PORT: 5432
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:17.1-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_NAME}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_NAME}
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  migrations:
+    <<: *backend
+    command: python manage.py migrate --noinput
+
+  static_collector:
+    <<: *backend
+    command: python manage.py collectstatic -c --no-input
+    volumes:
+      - static:/app/staticfiles
+
+  backend:
+    <<: *backend
+    command: >
+      sh -c "python manage.py csu &&
+            python manage.py create_test_users &&
+            python manage.py create_test_tasks &&
+            gunicorn config.wsgi:application --workers 4 --access-logfile - --error-logfile - -b 0.0.0.0:800"
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test: python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')"
+      interval: 10s
+      timeout: 5s
+      start_interval: 3s
+      start_period: 30s
+      retries: 5
+
+  nginx:
+    image: nginx:1.28-alpine
+    restart: on-failure
+    ports:
+      - "${APP_PORT:-80}:80"
+    volumes:
+      - static:/var/www/staticfiles/:ro
+      - media:/var/www/media/:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      static_collector:
+        condition: service_completed_successfully
+      backend:
+        condition: service_healthy
+
+volumes:
+  pg_data:
+  static:
+  media:
