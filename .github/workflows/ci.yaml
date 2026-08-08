@@ -110,12 +110,12 @@ jobs:
             git fetch origin
             git reset --hard origin/main
             
-            docker compose -f docker-compose.deploy.yaml --env-file .env down
-            docker compose -f docker-compose.deploy.yaml --env-file .env pull
+            sudo docker compose -f docker-compose.deploy.yaml --env-file .env down
+            sudo docker compose -f docker-compose.deploy.yaml --env-file .env pull
             
-            docker compose -f docker-compose.deploy.yaml --env-file .env run --rm migrations
-            docker compose -f docker-compose.deploy.yaml --env-file .env run --rm static_collector
+            sudo docker compose -f docker-compose.deploy.yaml --env-file .env run --rm migrations
+            sudo docker compose -f docker-compose.deploy.yaml --env-file .env run --rm static_collector
             
-            docker compose -f docker-compose.deploy.yaml --env-file .env up -d
+            sudo docker compose -f docker-compose.deploy.yaml --env-file .env up -d
             
-            docker image prune -f
+            sudo docker image prune -f
