@@ -38,12 +38,8 @@ def validate_no_self_parent(task):
 
 def validate_status(task):
     """Проверяет, что статус присвоился при создании задачи"""
-    if task.employee:
-        if task.status == "created":
-            raise ValidationError({"status": "Если сотрудник указан, то задача должна выполняться"})
-    else:
-        if task.status in ("processing", "completed"):
-            raise ValidationError({"status": "Задача не может выполняться (быть выполненной) без сотрудника"})
+    if task.status in ("processing", "completed") and not task.employee:
+        raise ValidationError({"status": "Задача не может выполняться (или быть выполненной) без исполнителя"})
 
 
 def validate_employee_is_active(task):

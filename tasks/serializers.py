@@ -25,10 +25,10 @@ class TaskSerializer(serializers.ModelSerializer):
             "deadline",
             "status",
             "priority",
-            "employee_id",
+            "employee",
             "employee_full_name",
             "employee_email",
-            "owner_id",
+            "owner",
             "owner_full_name",
             "owner_email",
             "parent_task",
@@ -39,7 +39,7 @@ class TaskSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             "id",
-            "owner_id",
+            "owner",
             "created_at",
             "updated_at",
             "completed_at",
