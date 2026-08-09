@@ -47,6 +47,7 @@ class Task(models.Model):
         related_name="owner_tasks",
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         verbose_name="Владелец",
         help_text="Кто создал задачу",
     )

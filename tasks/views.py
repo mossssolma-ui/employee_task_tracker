@@ -84,7 +84,7 @@ class TaskViewSet(viewsets.ModelViewSet):
                             "cancelled": 1,
                             "overdue": 1,
                             "very_high_count": 3,
-                            "high_priority": 4,
+                            "high_count": 4,
                         },
                         "results": [
                             {
@@ -135,7 +135,7 @@ class TaskViewSet(viewsets.ModelViewSet):
                         "cancelled": cancelled_count,
                         "overdue": overdue_count,
                         "very_high_count": very_high_count,
-                        "high_priority": high_count,
+                        "high_count": high_count,
                     },
                     "results": serializer.data,
                 }
@@ -151,7 +151,7 @@ class TaskViewSet(viewsets.ModelViewSet):
                     "cancelled": cancelled_count,
                     "overdue": overdue_count,
                     "very_high_count": very_high_count,
-                    "high_priority": high_count,
+                    "high_count": high_count,
                 },
                 "results": serializer.data,
             }
@@ -185,7 +185,7 @@ class BusyEmployeesAPIView(APIView):
     permission_classes = [IsModerator]
 
     @swagger_auto_schema(
-        operation_description="Получить список занятых сотрудников и их текущих активных задач (доступно модераторам)",
+        operation_description="Получить список занятых сотрудников и их активных задач (доступно модераторам)",
         responses={
             200: openapi.Response(
                 description="Список сотрудников с задачами",
