@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 
 from users.models import CustomUser
@@ -33,9 +33,15 @@ class UserCreateAPIView(generics.CreateAPIView):
 class UserListAPIView(generics.ListAPIView):
     """Просмотр списка всех пользователей"""
 
-    permission_classes = [IsModerator]
+    permission_classes = [IsModerator | IsAdminUser]
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
+
+    def get_queryset(self):
+        moderators = CustomUser.objects.filter(groups__name="moderator").order_by("full_name")
+        employees = CustomUser.objects.exclude(groups__name="moderator").order_by("full_name")
+
+        return list(moderators) + list(employees)
 
     @swagger_auto_schema(
         operation_description="Просмотр всех пользователей (доступно модераторам и админам)",

@@ -11,16 +11,11 @@ class UserViewsTestCase(APITestCase):
 
     def setUp(self):
         self.user = CustomUser.objects.create_user(
-            email="test@test.com",
-            password="Test12345!",
-            full_name="Test Testovich"
+            email="test@test.com", password="Test12345!", full_name="Test Testovich"
         )
 
         self.moderator = CustomUser.objects.create_user(
-            email="mod@test.com",
-            password="Test12345!",
-            full_name="Mod Moderator",
-            is_staff=True
+            email="mod@test.com", password="Test12345!", full_name="Mod Moderator", is_staff=True
         )
         moderator_group, _ = Group.objects.get_or_create(name="moderator")
         self.moderator.groups.add(moderator_group)
@@ -28,11 +23,7 @@ class UserViewsTestCase(APITestCase):
     def test_user_create(self):
         """Тест регистрации нового пользователя"""
         url = reverse("users:register")
-        data = {
-            "email": "newuser@test.com",
-            "password": "StrongPass123!",
-            "full_name": "New User"
-        }
+        data = {"email": "newuser@test.com", "password": "StrongPass123!", "full_name": "New User"}
         response = self.client.post(url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(CustomUser.objects.filter(email="newuser@test.com").exists())
