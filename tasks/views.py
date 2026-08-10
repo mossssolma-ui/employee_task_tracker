@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 
 from tasks.models import Task
 from tasks.paginators import CustomPaginator
-from tasks.permissions import IsOwner, IsTaskEmployee
+from tasks.permissions import IsOwner
 from tasks.serializers import TaskSerializer
 from tasks.services import (
     get_busy_employees,
@@ -59,9 +59,9 @@ class TaskViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             self.permission_classes = [IsModerator]
         elif self.action == "destroy":
-            self.permission_classes = [IsOwner | IsModerator]
-        elif self.action in ["update", "partial_update", "retrieve"]:
-            self.permission_classes = [IsOwner | IsModerator | IsTaskEmployee]
+            self.permission_classes = [IsOwner]
+        elif self.action in ["update", "partial_update"]:
+            self.permission_classes = [IsOwner]
         else:
             self.permission_classes = [IsAuthenticated]
         return super().get_permissions()
@@ -83,8 +83,11 @@ class TaskViewSet(viewsets.ModelViewSet):
                             "completed": 2,
                             "cancelled": 1,
                             "overdue": 1,
-                            "very_high_count": 3,
-                            "high_priority": 4,
+                            "very_high_count": 4,
+                            "high_count": 3,
+                            "medium_count": 1,
+                            "low_count": 1,
+                            "important_count": 2,
                         },
                         "results": [
                             {
@@ -118,6 +121,14 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         very_high_count = queryset.filter(priority="very_high").count()
         high_count = queryset.filter(priority="high").count()
+        medium_count = queryset.filter(priority="medium").count()
+        low_count = queryset.filter(priority="low").count()
+
+        important_count = (
+            Task.objects.filter(status=Task.TaskStatus.CREATED, subtasks__status=Task.TaskStatus.PROCESSING)
+            .distinct()
+            .count()
+        )
 
         page = self.paginate_queryset(queryset)
         if page:
@@ -135,7 +146,10 @@ class TaskViewSet(viewsets.ModelViewSet):
                         "cancelled": cancelled_count,
                         "overdue": overdue_count,
                         "very_high_count": very_high_count,
-                        "high_priority": high_count,
+                        "high_count": high_count,
+                        "medium_count": medium_count,
+                        "low_count": low_count,
+                        "important_count": important_count,
                     },
                     "results": serializer.data,
                 }
@@ -151,7 +165,10 @@ class TaskViewSet(viewsets.ModelViewSet):
                     "cancelled": cancelled_count,
                     "overdue": overdue_count,
                     "very_high_count": very_high_count,
-                    "high_priority": high_count,
+                    "high_count": high_count,
+                    "medium_count": medium_count,
+                    "low_count": low_count,
+                    "important_count": important_count,
                 },
                 "results": serializer.data,
             }
@@ -185,7 +202,7 @@ class BusyEmployeesAPIView(APIView):
     permission_classes = [IsModerator]
 
     @swagger_auto_schema(
-        operation_description="Получить список занятых сотрудников и их текущих активных задач (доступно модераторам)",
+        operation_description="Получить список занятых сотрудников и их активных задач (доступно модераторам)",
         responses={
             200: openapi.Response(
                 description="Список сотрудников с задачами",

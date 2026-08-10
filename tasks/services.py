@@ -25,6 +25,8 @@ def get_busy_employees() -> QuerySet[CustomUser]:
     """
     return (
         CustomUser.objects.filter(is_active=True, status=CustomUser.EmployeeStatus.ACTIVE)
+        .exclude(groups__name="moderator")
+        .exclude(is_superuser=True)
         .annotate(
             active_tasks_count=Count("employee_tasks", filter=Q(employee_tasks__status=Task.TaskStatus.PROCESSING))
         )
@@ -55,8 +57,13 @@ def get_potential_employees_for_important_task(important_tasks) -> list:
     if not important_tasks.exists():
         return []
 
-    all_active_employees = CustomUser.objects.filter(is_active=True, status=CustomUser.EmployeeStatus.ACTIVE).annotate(
-        active_tasks_count=Count("employee_tasks", filter=Q(employee_tasks__status=Task.TaskStatus.PROCESSING))
+    all_active_employees = (
+        CustomUser.objects.filter(is_active=True, status=CustomUser.EmployeeStatus.ACTIVE)
+        .exclude(groups__name="moderator")
+        .exclude(is_superuser=True)
+        .annotate(
+            active_tasks_count=Count("employee_tasks", filter=Q(employee_tasks__status=Task.TaskStatus.PROCESSING))
+        )
     )
 
     if not all_active_employees.exists():
@@ -71,7 +78,10 @@ def get_potential_employees_for_important_task(important_tasks) -> list:
         subtask_employees_id = [
             subtask.employee_id
             for subtask in task.subtasks.all()
-            if subtask.employee_id and subtask.employee.is_active
+            if subtask.employee_id
+            and subtask.employee.is_active
+            and not subtask.employee.groups.filter(name="moderator").exists()
+            and not subtask.employee.is_superuser
         ]
 
         candidates = all_active_employees.filter(
