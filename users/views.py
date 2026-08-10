@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 
 from users.models import CustomUser
@@ -33,9 +33,15 @@ class UserCreateAPIView(generics.CreateAPIView):
 class UserListAPIView(generics.ListAPIView):
     """Просмотр списка всех пользователей"""
 
-    permission_classes = [IsModerator]
+    permission_classes = [IsModerator | IsAdminUser]
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
+
+    def get_queryset(self):
+        moderators = CustomUser.objects.filter(groups__name="moderator").order_by("full_name")
+        employees = CustomUser.objects.exclude(groups__name="moderator").order_by("full_name")
+
+        return list(moderators) + list(employees)
 
     @swagger_auto_schema(
         operation_description="Просмотр всех пользователей (доступно модераторам и админам)",
@@ -54,18 +60,22 @@ class UserRetrieveAPIView(generics.RetrieveAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
 
-    @swagger_auto_schema(
-        operation_description="Получить информацию о пользователе по ID. Обычный пользователь видит только себя.",
-        responses={200: CustomUserSerializer, 404: "Пользователь не найден или нет прав доступа"},
-    )
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
     def get_queryset(self):
         user = self.request.user
         if user.is_superuser or user.groups.filter(name="moderator").exists():
             return CustomUser.objects.all()
         return CustomUser.objects.filter(id=user.id)
+
+    @swagger_auto_schema(
+        operation_description="Получить информацию о пользователе по ID. Обычный пользователь видит только себя.",
+        responses={
+            200: CustomUserSerializer,
+            403: "Доступ запрещен",
+            404: "Пользователь не найден или нет прав доступа",
+        },
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
 
 class UserUpdateAPIView(generics.UpdateAPIView):
@@ -73,6 +83,12 @@ class UserUpdateAPIView(generics.UpdateAPIView):
 
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser or user.groups.filter(name="moderator").exists():
+            return CustomUser.objects.all()
+        return CustomUser.objects.filter(id=user.id)
 
     @swagger_auto_schema(
         operation_description="Полное обновление данных пользователя (PUT)",
@@ -100,28 +116,24 @@ class UserUpdateAPIView(generics.UpdateAPIView):
     def patch(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_superuser or user.groups.filter(name="moderator").exists():
-            return CustomUser.objects.all()
-        return CustomUser.objects.filter(id=user.id)
-
 
 class UserDestroyAPIView(generics.DestroyAPIView):
     """Удаление пользователя"""
 
+    permission_classes = [IsAdminUser]
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
 
+    def perform_destroy(self, obj):
+        obj.delete()
+
     @swagger_auto_schema(
-        operation_description="Удалить пользователя (доступно админам и модераторам, либо пользователю самому себе)",
-        responses={204: "Пользователь успешно удален", 403: "Доступ запрещен", 404: "Пользователь не найден"},
+        operation_description="Удалить пользователя (доступно админам)",
+        responses={
+            204: "Пользователь успешно удален",
+            403: "Доступ запрещен (нужны права админа)",
+            404: "Пользователь не найден",
+        },
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
-
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_superuser or user.groups.filter(name="moderator").exists():
-            return CustomUser.objects.all()
-        return CustomUser.objects.filter(id=user.id)
