@@ -90,3 +90,9 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         verbose_name = "Пользователь"
         verbose_name_plural = "Пользователи"
         ordering = ["-email"]
+        indexes = [
+            models.Index(fields=['email']),
+            models.Index(fields=['status']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['is_staff'])
+        ]

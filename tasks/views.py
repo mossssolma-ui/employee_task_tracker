@@ -1,3 +1,4 @@
+from django.db.models import Count, Q
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg import openapi
@@ -105,24 +106,26 @@ class TaskViewSet(viewsets.ModelViewSet):
     )
     def list(self, request, *args, **kwargs):
         """Переопределение list для возврата статистики"""
-        queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.filter_queryset(self.get_queryset().select_related("employee", "owner"))
 
-        total_count = queryset.count()
-        created_count = queryset.filter(status=Task.TaskStatus.CREATED).count()
-        processing_count = queryset.filter(status=Task.TaskStatus.PROCESSING).count()
-        completed_count = queryset.filter(status=Task.TaskStatus.COMPLETED).count()
-        cancelled_count = queryset.filter(status=Task.TaskStatus.CANCELLED).count()
-
-        overdue_count = (
-            queryset.filter(deadline__lt=timezone.now().date())
-            .exclude(status__in=[Task.TaskStatus.COMPLETED, Task.TaskStatus.CANCELLED])
-            .count()
+        stats = queryset.aggregate(
+            total=Count("id"),
+            created=Count("id", filter=Q(status=Task.TaskStatus.CREATED)),
+            processing=Count("id", filter=Q(status=Task.TaskStatus.PROCESSING)),
+            completed=Count("id", filter=Q(status=Task.TaskStatus.COMPLETED)),
+            cancelled=Count("id", filter=Q(status=Task.TaskStatus.CANCELLED)),
+            overdue=Count(
+                "id",
+                filter=Q(
+                    deadline__lt=timezone.now().date(),
+                    status__in=[Task.TaskStatus.CREATED, Task.TaskStatus.PROCESSING],
+                ),
+            ),
+            very_high=Count("id", filter=Q(priority=Task.TaskPriority.VERY_HIGH)),
+            high=Count("id", filter=Q(priority=Task.TaskPriority.HIGH)),
+            medium=Count("id", filter=Q(priority=Task.TaskPriority.MEDIUM)),
+            low=Count("id", filter=Q(priority=Task.TaskPriority.LOW)),
         )
-
-        very_high_count = queryset.filter(priority="very_high").count()
-        high_count = queryset.filter(priority="high").count()
-        medium_count = queryset.filter(priority="medium").count()
-        low_count = queryset.filter(priority="low").count()
 
         important_count = (
             Task.objects.filter(status=Task.TaskStatus.CREATED, subtasks__status=Task.TaskStatus.PROCESSING)
@@ -139,16 +142,16 @@ class TaskViewSet(viewsets.ModelViewSet):
                     "next": self.paginator.get_next_link(),
                     "previous": self.paginator.get_previous_link(),
                     "statistics": {
-                        "total": total_count,
-                        "created_count": created_count,
-                        "processing_count": processing_count,
-                        "completed": completed_count,
-                        "cancelled": cancelled_count,
-                        "overdue": overdue_count,
-                        "very_high_count": very_high_count,
-                        "high_count": high_count,
-                        "medium_count": medium_count,
-                        "low_count": low_count,
+                        "total": stats["total"],
+                        "created_count": stats["created"],
+                        "processing_count": stats["processing"],
+                        "completed": stats["completed"],
+                        "cancelled": stats["cancelled"],
+                        "overdue": stats["overdue"],
+                        "very_high_count": stats["very_high"],
+                        "high_count": stats["high"],
+                        "medium_count": stats["medium"],
+                        "low_count": stats["low"],
                         "important_count": important_count,
                     },
                     "results": serializer.data,
@@ -158,16 +161,16 @@ class TaskViewSet(viewsets.ModelViewSet):
         return Response(
             {
                 "statistics": {
-                    "total": total_count,
-                    "created_count": created_count,
-                    "processing_count": processing_count,
-                    "completed": completed_count,
-                    "cancelled": cancelled_count,
-                    "overdue": overdue_count,
-                    "very_high_count": very_high_count,
-                    "high_count": high_count,
-                    "medium_count": medium_count,
-                    "low_count": low_count,
+                    "total": stats["total"],
+                    "created_count": stats["created"],
+                    "processing_count": stats["processing"],
+                    "completed": stats["completed"],
+                    "cancelled": stats["cancelled"],
+                    "overdue": stats["overdue"],
+                    "very_high_count": stats["very_high"],
+                    "high_count": stats["high"],
+                    "medium_count": stats["medium"],
+                    "low_count": stats["low"],
                     "important_count": important_count,
                 },
                 "results": serializer.data,
