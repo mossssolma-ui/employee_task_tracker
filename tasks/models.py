@@ -116,3 +116,13 @@ class Task(models.Model):
         verbose_name = "Задача"
         verbose_name_plural = "Задачи"
         ordering = ["-priority", "deadline"]
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['priority']),
+            models.Index(fields=['employee']),
+            models.Index(fields=['owner']),
+            models.Index(fields=['deadline']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['status', 'employee']),
+            models.Index(fields=['status', 'deadline']),
+        ]

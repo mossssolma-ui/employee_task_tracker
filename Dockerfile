@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=false
 
-RUN apk add --no-cache postgresql-libs gcc python3-dev musl-dev postgresql-dev
+RUN apk add --no-cache postgresql-libs
 
 RUN pip install --no-cache-dir poetry==2.4.1
 
